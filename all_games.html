@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dash Game Studio — Jogos indie de plataforma para Xbox e PC. Astrold, Ralph, Mine Hero e Little Ralph.">
+  <title>Dash Game Studio</title>
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a12;
+      --panel: #12121f;
+      --cyan: #00f0ff;
+      --magenta: #ff00aa;
+      --yellow: #ffe600;
+      --green: #39ff14;
+      --text: #e8e8ff;
+      --muted: #8888aa;
+      --pixel-border: 4px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "VT323", monospace;
+      font-size: 1.25rem;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .scanlines {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.08) 2px,
+        rgba(0, 0, 0, 0.08) 4px
+      );
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      z-index: -1;
+    }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 1.25rem; }
+
+    /* ── Header ── */
+    header {
+      padding: 2rem 0 1rem;
+      text-align: center;
+      border-bottom: var(--pixel-border) solid var(--cyan);
+      box-shadow: 0 4px 0 var(--magenta);
+    }
+
+    .logo-link {
+      display: inline-block;
+      line-height: 0;
+    }
+
+    .logo-img {
+      width: min(280px, 72vw);
+      height: auto;
+      image-rendering: auto;
+      filter: drop-shadow(3px 3px 0 var(--magenta));
+    }
+
+    .tagline {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 1.4rem;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    nav a {
+      font-family: "Press Start 2P", cursive;
+      font-size: 0.55rem;
+      color: var(--bg);
+      background: var(--cyan);
+      padding: 0.75rem 1rem;
+      text-decoration: none;
+      border: 3px solid var(--text);
+      box-shadow: 4px 4px 0 var(--magenta);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    nav a:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--magenta);
+    }
+
+    nav a.privacy-nav {
+      background: var(--yellow);
+      color: #1a1a1a;
+    }
+
+    /* ── Sections ── */
+    section { padding: 3.5rem 0; }
+
+    h2 {
+      font-family: "Press Start 2P", cursive;
+      font-size: clamp(0.6rem, 2vw, 0.8rem);
+      color: var(--cyan);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h2::before { content: "▶ "; color: var(--magenta); }
+    h2::after { content: " ◀"; color: var(--magenta); }
+
+    /* ── Game cards ── */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .game-card {
+      background: var(--panel);
+      border: var(--pixel-border) solid var(--text);
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s;
+      overflow: hidden;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 8px 0 var(--magenta);
+    }
+
+    .game-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: repeating-linear-gradient(90deg, var(--cyan), var(--cyan) 8px, var(--magenta) 8px, var(--magenta) 16px);
+    }
+
+    .game-thumb {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+      background: #0d0d18;
+    }
+
+    .game-thumb img {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .game-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .game-title {
+      font-family: "Press Start 2P", cursive;
+      font-size: 0.55rem;
+      color: var(--yellow);
+      line-height: 1.8;
+    }
+
+    .game-desc { color: var(--muted); font-size: 1.15rem; flex: 1; }
+
+    .game-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .chip {
+      font-size: 1rem;
+      padding: 0.15rem 0.5rem;
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+    }
+
+    .buy-btn {
+      margin-top: 0.75rem;
+      font-family: "Press Start 2P", cursive;
+      font-size: 0.45rem;
+      background: var(--green);
+      color: #0a0a12;
+      padding: 0.75rem;
+      text-align: center;
+      border: 2px solid var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .buy-btn img {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ── About ── */
+    .about-box {
+      background: var(--panel);
+      border: var(--pixel-border) solid var(--yellow);
+      padding: 2rem;
+      position: relative;
+    }
+
+    .about-box::after {
+      content: "PLAYER 1";
+      position: absolute;
+      top: -12px;
+      left: 1rem;
+      background: var(--yellow);
+      color: #1a1a1a;
+      font-family: "Press Start 2P", cursive;
+      font-size: 0.45rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .about-box p { margin-bottom: 1rem; color: var(--muted); }
+    .about-box p:first-of-type { color: var(--text); }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      padding: 1rem;
+      border: 3px solid var(--magenta);
+      background: rgba(255, 0, 170, 0.08);
+    }
+
+    .stat-num {
+      font-family: "Press Start 2P", cursive;
+      font-size: 0.7rem;
+      color: var(--magenta);
+      display: block;
+    }
+
+    .stat-label { font-size: 1rem; color: var(--muted); }
+
+    /* ── Privacy / LGPD ── */
+    #privacy {
+      scroll-margin-top: 2rem;
+    }
+
+    .privacy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .privacy-card {
+      background: var(--panel);
+      border: 3px solid var(--text);
+      padding: 1.5rem;
+    }
+
+    .privacy-card h4 {
+      font-family: "Press Start 2P", cursive;
+      font-size: 0.5rem;
+      color: var(--cyan);
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px dashed var(--muted);
+    }
+
+    .privacy-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .privacy-card li {
+      font-size: 1.1rem;
+      color: var(--muted);
+      padding-left: 1.25rem;
+      position: relative;
+    }
+
+    .privacy-card li::before {
+      content: "■";
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-size: 0.6rem;
+      top: 0.35rem;
+    }
+
+    /* ── Contact ── */
+    .contact-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .contact-links a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.75rem 1.25rem;
+      border: 3px solid var(--magenta);
+      transition: background 0.2s;
+    }
+
+    .contact-links a:hover { background: rgba(255, 0, 170, 0.15); }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: var(--pixel-border) solid var(--cyan);
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    footer a { color: var(--cyan); }
+
+    @media (max-width: 600px) {
+      nav a { font-size: 0.45rem; padding: 0.6rem 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <header>
+    <div class="wrap">
+      <a href="#" class="logo-link" aria-label="Dash Game Studio">
+        <img class="logo-img" src="assets/images/logo/logo_04.png" alt="Dash Game Studio">
+      </a>
+      <p class="tagline">Jogos indie nostálgicos · Xbox &amp; PC · Feito no Brasil</p>
+      <nav>
+        <a href="#jogos">JOGOS</a>
+        <a href="#sobre">SOBRE</a>
+        <a href="#privacy" class="privacy-nav">LGPD</a>
+        <a href="#contato">CONTATO</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="jogos">
+      <div class="wrap">
+        <h2>SELECT YOUR GAME</h2>
+        <div class="games-grid">
+          <a class="game-card" data-game="astrold" href="https://www.xbox.com/pt-BR/games/store/astrold/9pn94q4w6t4m" target="_blank" rel="noopener">
+            <div class="game-thumb">
+              <img src="assets/images/games/astrold.png" alt="Astrold">
+            </div>
+            <div class="game-body">
+              <div class="game-title">Astrold</div>
+              <p class="game-desc">Salve o planeta Astro da invasão de Asdrubald. Coop local com Astrino — aventura intergalática nostálgica.</p>
+              <div class="game-meta">
+                <span class="chip">Ação</span>
+                <span class="chip">2P Local</span>
+                <span class="chip">4K</span>
+              </div>
+              <div class="buy-btn">
+                <img src="assets/images/store/microsoft-store.png" alt="">
+                MICROSOFT STORE
+              </div>
+            </div>
+          </a>
+
+          <a class="game-card" data-game="ralph" href="https://www.xbox.com/pt-br/games/store/ralph-the-buddy-saga/9nnt95bchz7x" target="_blank" rel="noopener">
+            <div class="game-thumb">
+              <img src="assets/images/games/ralph-saga.png" alt="Ralph The Buddy Saga">
+            </div>
+            <div class="game-body">
+              <div class="game-title">Ralph The Buddy Saga</div>
+              <p class="game-desc">A jornada completa de Ralph em Buddyland. 50 níveis, poderes especiais e zero anúncios. Clássico de plataforma 2D.</p>
+              <div class="game-meta">
+                <span class="chip">Plataforma</span>
+                <span class="chip">50 Fases</span>
+                <span class="chip">HDR</span>
+              </div>
+              <div class="buy-btn">
+                <img src="assets/images/store/microsoft-store.png" alt="">
+                MICROSOFT STORE
+              </div>
+            </div>
+          </a>
+
+          <a class="game-card" data-game="mine" href="https://www.xbox.com/pt-BR/games/store/mine-hero/9PN7Z9T6ZV21/0010" target="_blank" rel="noopener">
+            <div class="game-thumb">
+              <img src="assets/images/games/mine-hero.png" alt="Mine Hero">
+            </div>
+            <div class="game-body">
+              <div class="game-title">Mine Hero</div>
+              <p class="game-desc">Jhonny precisa ajudar Lara a recuperar os diamantes perdidos dentro da mina. Labirintos, desafios e muita diversão.</p>
+              <div class="game-meta">
+                <span class="chip">Plataforma</span>
+                <span class="chip">1 Jogador</span>
+                <span class="chip">Nuvem</span>
+              </div>
+              <div class="buy-btn">
+                <img src="assets/images/store/microsoft-store.png" alt="">
+                MICROSOFT STORE
+              </div>
+            </div>
+          </a>
+
+          <a class="game-card" data-game="little" href="https://www.xbox.com/pt-BR/games/store/little-ralph/9mw86lsd6x9r" target="_blank" rel="noopener">
+            <div class="game-thumb">
+              <img src="assets/images/games/little-ralph.png" alt="Little Ralph">
+            </div>
+            <div class="game-body">
+              <div class="game-title">Little Ralph</div>
+              <p class="game-desc">Boss fight épica em pixel art retrô. Derrote o caveirão vermelho com movimentos precisos e combate justo.</p>
+              <div class="game-meta">
+                <span class="chip">Boss Fight</span>
+                <span class="chip">Pixel Art</span>
+                <span class="chip">+10</span>
+              </div>
+              <div class="buy-btn">
+                <img src="assets/images/store/microsoft-store.png" alt="">
+                MICROSOFT STORE
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="sobre">
+      <div class="wrap">
+        <h2>ABOUT THE DEV</h2>
+        <div class="about-box">
+          <p>Nascido nos anos 80 no Brasil, cresci com Atari 2600, Master System e a magia dos jogos de plataforma simples — Alex Kidd, Mickey, Sonic. Sempre quis entender como aqueles mundos cabiam nas fitas.</p>
+          <p>Em 2016 descobri o GameMaker e publiquei meu primeiro jogo, Astrold Jump. Depois veio Jokoki — renomeado para Ralph The Buddy — e uma saga que distribuiu mais de 13 mil cópias pelo mundo em poucos meses.</p>
+          <p>Hoje sou desenvolvedor indie na Dash Game Studio: faço tudo sozinho (sprites, código, publicação) com ajuda do Wil nos personagens Astrold e Ralph. Jogos simples, divertidos e nostálgicos — feitos para distrair sem estressar.</p>
+          <div class="stats">
+            <div class="stat"><span class="stat-num">4</span><span class="stat-label">Jogos ativos</span></div>
+            <div class="stat"><span class="stat-num">13K+</span><span class="stat-label">Cópias Ralph</span></div>
+            <div class="stat"><span class="stat-num">BR</span><span class="stat-label">Indie nacional</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy">
+      <div class="wrap">
+        <h2>PRIVACY / LGPD</h2>
+
+        <div class="privacy-grid">
+          <div class="privacy-card">
+            <h4>Política de Privacidade - Português</h4>
+            <ul>
+              <li>O jogo foi criado por Dash Game Studio.</li>
+              <li>O jogo não usa nenhuma das suas informações pessoais.</li>
+              <li>O jogo não coleta nenhuma das suas informações pessoais.</li>
+              <li>O jogo não usa um banco de dados para armazenar nenhum conteúdo pessoal.</li>
+              <li>O jogo exibirá anúncios.</li>
+              <li>O jogo não envia dados para análises.</li>
+              <li>Qualquer permissão de que o jogo precisa tem o único propósito de oferecer a você uma boa experiência de jogo. Ele não rouba ou armazena de forma alguma dados ou informações pessoais.</li>
+            </ul>
+          </div>
+          <div class="privacy-card">
+            <h4>Privacy Policy - English</h4>
+            <ul>
+              <li>The game is created by Dash Game Studio.</li>
+              <li>The game does not use any of your personal information.</li>
+              <li>The game does not get any of your personal information.</li>
+              <li>The game does not use a database to store any personal content.</li>
+              <li>The game will display advertisements.</li>
+              <li>The game doesn't send data for analytcs.</li>
+              <li>Any permission that the game needs is solely with the whole purpose of giving you a nice game experience. It does not in any way steals or stores data or personal information.</li>
+            </ul>
+          </div>
+          <div class="privacy-card">
+            <h4>Política de Privacidade - Español</h4>
+            <ul>
+              <li>El juego fue creado por Dash Game Studio.</li>
+              <li>El juego no utiliza tu información personal.</li>
+              <li>El juego no obtiene ninguna información personal tuya.</li>
+              <li>El juego no utiliza una base de datos para almacenar ningún contenido personal.</li>
+              <li>El juego mostrará anuncios.</li>
+              <li>El juego no envía datos para análisis.</li>
+              <li>Cualquier permiso que necesite el juego es únicamente con el propósito de brindarle una experiencia de juego agradable. No roba ni almacena de ninguna manera datos o información personal.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contato">
+      <div class="wrap">
+        <h2>CONTACT</h2>
+        <p style="text-align:center; color: var(--muted); margin-bottom: 1.5rem;">Acompanhe novidades e fale conosco nas redes:</p>
+        <div class="contact-links">
+          <a href="https://www.instagram.com/dashgamestudio/" target="_blank" rel="noopener">📷 Instagram</a>
+          <a href="https://www.youtube.com/@dashgamestudio" target="_blank" rel="noopener">▶ YouTube</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© Dash Game Studio · Indie games from Brazil</p>
+    <p style="margin-top:0.5rem;"><a href="#privacy">Política de Privacidade</a></p>
+  </footer>
+</body>
+</html>
